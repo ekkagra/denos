@@ -29,10 +29,14 @@ jobs:
               bash scripts/05_denos_BiosUEFI_ISO.sh
             "
 
-      - name: Upload ISO artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: denos-iso
-          path: /home/runner/work/denos/ /
-            denos/output/denos.iso
+         - name: Debug ISO location
+           run: |
+            echo "Looking for ISO files..."
+            find /home/runner/work/denos -type f -name "*.iso" || true
 
+         - name: Upload ISO Artifact
+           uses: actions/upload-artifact@v4
+           with:
+           name: denos-iso
+           path: /home/runner/work/denos/
+             denos/output/denos.iso 
