@@ -15,7 +15,7 @@ jobs:
         run: |
           docker run --privileged --rm \
             -v ${{ github.workspace }}:/denos \
-            -w /denos/ci-iso \
+            -w /denos \
             debian:bookworm bash -c "
               set -e
               apt-get update
