@@ -32,14 +32,13 @@ jobs:
         working-directory: ./scripts
         run: |
           set -e
+          export OUTPUT_DIR=${{ github.workspace }}/final_iso
+          mkdir -p $OUTPUT_DIR
           ./01_denos_pre_reqs.sh
           ./02_denos_debootstrap.sh
           ./04_denos_MakeSquashfs.sh
           ./05_denos_BiosUEFI_ISO.sh
-          mkdir -p $GITHUB_WORKSPACE/output
-          # Move final ISO (whatever its name) to output/
-          find . -type f -name "*.iso" -exec mv {} $GITHUB_WORKSPACE/output/ \;
-
+      
       # 5️⃣ List files to verify ISO exists
       - name: List output contents
         run: |
@@ -51,4 +50,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: denos-iso
-          path: ${{ github.workspace }}/output/*.iso
+          path: ${{ github.workspace }}/final_iso/*.iso
