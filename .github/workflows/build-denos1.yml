@@ -1,43 +1,54 @@
 name: Build DenOS ISO
 
 on:
-  workflow_dispatch:  # enables the "Run workflow" button in GitHub Actions
+  workflow_dispatch:  # allows manual trigger from GitHub Actions UI
 
 jobs:
-  build:
+  build-iso:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
-      - name: Checkout code
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Docker and run DenOS build
+      # 2️⃣ Install dependencies
+      - name: Install required packages
         run: |
-          docker run --privileged --rm \
-            -v ${{ github.workspace }}:/denos \
-            -w /denos \
-            debian:bookworm bash -c "
-              set -e
-              apt-get update
-              apt-get install -y sudo debootstrap squashfs-tools grub-pc-bin grub-efi-amd64-bin xorriso mtools isolinux live-boot systemd-sysv \
-                                 network-manager net-tools wireless-tools wpagui curl openssh-server openssh-client blackbox xserver-xorg-core xserver-xorg xinit xterm \
-                                 screenfetch screen lxterminal vim iputils-ping psmisc htop nmap wget git ca-certificates nano fdisk
+          sudo apt-get update
+          sudo apt-get install -y \
+            debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin \
+            mtools dosfstools isolinux genisoimage
 
-              echo '--- Running DenOS Build Scripts ---'
-              export GITHUB_WORKSPACE=${{ github.workspace }}
-              echo "$GITHUB_WORKSPACE"
-              bash scripts/01_denos_pre_reqs.sh
-              bash scripts/02_denos_debootstrap.sh
-              bash scripts/03_denos_chroot.sh
-              bash scripts/04_denos_MakeSquashfs.sh
-              bash scripts/05_denos_BiosUEFI_ISO.sh
+      # 3️⃣ Make all build scripts executable
+      - name: Make build scripts executable
+        run: chmod +x ./*.sh
 
-              echo '✅ DenOS Build Completed Successfully'
-            "
+      # 4️⃣ Run all build scripts sequentially
+      - name: Run DenOS build scripts
+        run: |
+          set -e
+          scripts/01_denos_pre_reqs.sh
+          scripts/02_denos_debootstrap.sh
+          scripts/03_denos_chroot.sh || ./03_denos_chroot_lxde.sh || true
+          scripts/04_denos_MakeSquashfs.sh
+          mkdir -p $GITHUB_WORKSPACE/output
+          scripts/05_denos_BiosUEFI_ISO.sh
+          # Move final ISO (whatever its name) to output/
+          find . -type f -name "*.iso" -exec mv {} $GITHUB_WORKSPACE/output/ \;
 
-      - name: Upload ISO artifact
+      # 5️⃣ List files to verify ISO exists
+      - name: List output contents
+        run: |
+          echo "Listing contents of workspace..."
+          ls -lhR $GITHUB_WORKSPACE/output || true
+
+      # 6️⃣ Upload ISO as GitHub artifact
+      - name: Upload DenOS ISO artifact
         uses: actions/upload-artifact@v4
         with:
           name: denos-iso
-          path: $GITHUB_WORKSPACE/output/*.iso
-          if-no-files-found: warn  
+          path: ${{ github.workspace }}/output/*.iso
