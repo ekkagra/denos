@@ -29,13 +29,13 @@ jobs:
 
       # 4️⃣ Run all build scripts sequentially
       - name: Run DenOS build scripts
+        working-directory: ./scripts
         run: |
           set -e
-          scripts/01_denos_pre_reqs.sh
-          scripts/02_denos_debootstrap.sh
-          scripts/03_denos_chroot.sh || ./03_denos_chroot_lxde.sh || true
-          scripts/04_denos_MakeSquashfs.sh
-          scripts/05_denos_BiosUEFI_ISO.sh
+          ./01_denos_pre_reqs.sh
+          ./02_denos_debootstrap.sh
+          ./04_denos_MakeSquashfs.sh
+          ./05_denos_BiosUEFI_ISO.sh
           mkdir -p $GITHUB_WORKSPACE/output
           # Move final ISO (whatever its name) to output/
           find . -type f -name "*.iso" -exec mv {} $GITHUB_WORKSPACE/output/ \;
